@@ -3,6 +3,7 @@ require 'includes/db.php';
 session_start();
 
 $error = "";
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : '';
 
 // Show success message from registration if exists
 if (isset($_SESSION['success'])) {
@@ -11,6 +12,11 @@ if (isset($_SESSION['success'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // #region agent log
+    $logDir = __DIR__ . '/.cursor';
+    if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
+    @file_put_contents($logDir . '/debug.log', json_encode(['location' => 'login.php:13', 'message' => 'Login POST received', 'data' => ['hasEmail' => isset($_POST['email']), 'hasPassword' => isset($_POST['password'])], 'timestamp' => time() * 1000, 'sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'C']) . "\n", FILE_APPEND);
+    // #endregion
     $email = trim($_POST['email']);
     $pass = $_POST['password'];
 
@@ -24,7 +30,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_name'] = $user['full_name'];
         $_SESSION['user_role'] = $user['role'];
         
-        // Redirect based on role
+        // #region agent log
+        $logDir = __DIR__ . '/.cursor';
+        if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
+        @file_put_contents($logDir . '/debug.log', json_encode(['location' => 'login.php:25', 'message' => 'Login successful', 'data' => ['userId' => $user['id'], 'role' => $user['role']], 'timestamp' => time() * 1000, 'sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'C']) . "\n", FILE_APPEND);
+        // #endregion
+        
+        // Redirect based on role or requested page
+        $post_redirect = isset($_POST['redirect']) ? trim($_POST['redirect']) : '';
+        if (!empty($post_redirect) && strpos($post_redirect, 'http') === false) {
+            header("Location: " . $post_redirect);
+            exit();
+        }
+
         if ($user['role'] === 'admin') {
             header("Location: admin/index.php");
         } else {
@@ -32,6 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         exit();
     } else {
+        // #region agent log
+        $logDir = __DIR__ . '/.cursor';
+        if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
+        @file_put_contents($logDir . '/debug.log', json_encode(['location' => 'login.php:36', 'message' => 'Login failed', 'data' => ['userFound' => !empty($user), 'passwordMatch' => $user ? password_verify($pass, $user['password']) : false], 'timestamp' => time() * 1000, 'sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'C']) . "\n", FILE_APPEND);
+        // #endregion
         $error = "Invalid email or password.";
     }
 }
@@ -87,7 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <?php endif; ?>
 
                         <!-- Login form -->
-                        <form method="POST" action="" id="loginForm">
+                        <form method="POST" action="login.php" id="loginForm" onsubmit="console.log('DEBUG: Form submitting'); return true;">
+                            <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirect) ?>">
                             <div class="mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-envelope me-1 text-success"></i>Email Address
@@ -99,7 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label class="form-label">
                                     <i class="bi bi-lock me-1 text-success"></i>Password
                                 </label>
-                                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                                <div class="input-group">
+                                    <input type="password" name="password" class="form-control" placeholder="Enter your password" required id="loginPassword">
+                                    <button type="button" class="btn btn-outline-secondary password-toggle" data-controls="loginPassword" aria-label="Toggle password visibility">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             <button type="submit" class="btn btn-success w-100 btn-lg">

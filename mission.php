@@ -1,6 +1,12 @@
 <?php
 // Our Mission page - Explains GreenCart's mission and values
 require 'includes/db.php';
+
+// #region agent log
+$logDir = __DIR__ . '/.cursor';
+if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
+@file_put_contents($logDir . '/debug.log', json_encode(['location' => 'mission.php:3', 'message' => 'Mission page accessed', 'data' => ['scriptName' => $_SERVER['PHP_SELF'], 'requestUri' => $_SERVER['REQUEST_URI'] ?? ''], 'timestamp' => time() * 1000, 'sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'F']) . "\n", FILE_APPEND);
+// #endregion
 ?>
 <!DOCTYPE html>
 <html lang="en">

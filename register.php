@@ -3,6 +3,7 @@ require 'includes/db.php';
 session_start();
 
 $message = "";
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = trim($_POST['full_name']);
@@ -29,7 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             if ($stmt->execute([$name, $email, $hashed_pass])) {
                 $_SESSION['success'] = "Account created! Please login.";
-                header("Location: login.php");
+                $loginRedirect = 'login.php';
+                if (!empty($redirect) && strpos($redirect, 'http') === false) {
+                    $loginRedirect .= '?redirect=' . urlencode($redirect);
+                }
+                header("Location: " . $loginRedirect);
                 exit();
             } else {
                 $message = "Error creating account.";
@@ -81,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <?php endif; ?>
 
                         <!-- Registration form -->
-                        <form method="POST" action="" id="registerForm">
+                        <form method="POST" action="register.php" id="registerForm" onsubmit="console.log('DEBUG: Form submitting'); return true;">
                             <div class="mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-person me-1 text-success"></i>Full Name
@@ -100,7 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label class="form-label">
                                     <i class="bi bi-lock me-1 text-success"></i>Password
                                 </label>
-                                <input type="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
+                                <div class="input-group">
+                                    <input type="password" name="password" class="form-control" placeholder="Minimum 6 characters" required id="registerPassword">
+                                    <button type="button" class="btn btn-outline-secondary password-toggle" data-controls="registerPassword" aria-label="Toggle password visibility">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle me-1"></i>Password must be at least 6 characters long
                                 </small>
