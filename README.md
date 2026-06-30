@@ -65,6 +65,7 @@ This project is a server-side PHP and MySQL application. It requires a local or 
 
 This project is a server-side PHP and MySQL application. It requires a local or PHP-enabled hosting environment to run and therefore is not deployed on GitHub Pages.
 ---
+---
 
 ## 👨‍💻 Author
 
